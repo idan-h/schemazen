@@ -44,9 +44,6 @@ Another added option, is to specify which object types to script from the below 
 ```  
 Use it like: `-t users,roles,tables`  
 If empty, includes all
-  
-
-See ```SchemaZen.exe help [command]``` for more information and options on each command.
 
 
 ### export
@@ -61,7 +58,10 @@ This will export the data from the database to `c:\somedir\data`
     SchemaZen.exe import -c "server=localhost;database=db;trusted_connection=yes;" --importDir c:\somedir
 
 This will import the data from the folder `c:\somedir\data` to the database
+  
 
+See ```SchemaZen.exe help [command]``` for more information and options on each command.
+  
 
 ## SSDT
 This project was meant to work with SSDT but without using their deployment system to the have more flexibility over the migrations.  
