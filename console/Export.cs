@@ -9,10 +9,14 @@ using SchemaZen.Library.Command;
 using SchemaZen.Library.Models;
 
 namespace SchemaZen.console {
-	public class Script : BaseCommand {
-		public Script()
+	public class Export : BaseCommand {
+		public Export()
 			: base(
-				"Script", "Generate scripts for the specified database.") {
+				"Export", "Generate data files for the specified tables.") {
+			HasRequiredOption(
+				"d|exportDir=",
+				"The directory in which the exported data will be stored",
+				o => ExportDir = o);
 			HasOption(
 				"dataTables=",
 				"A comma separated list of tables to export data from.",
@@ -26,68 +30,48 @@ namespace SchemaZen.console {
 				"A regular expression pattern that exclude tables to export data from.",
 				o => DataTablesExcludePattern = o);
 			HasOption(
-				"filterTypes=",
-				"A comma separated list of the types that will not be scripted. Valid types: " +
-				Database.ValidTypes,
-				o => FilterTypes = o);
-			HasOption(
-				"onlyTypes=",
-				"A comma separated list of the types that will only be scripted. Valid types: " +
-				Database.ValidTypes,
-				o => OnlyTypes = o);
+				"tableHint=",
+				"Table hint to use when exporting data.",
+				o => TableHint = o);
 		}
 
 		private Logger _logger;
+		protected string ExportDir { get; set; }
 		protected string DataTables { get; set; }
-		protected string FilterTypes { get; set; }
-		protected string OnlyTypes { get; set; }
 		protected string DataTablesPattern { get; set; }
 		protected string DataTablesExcludePattern { get; set; }
+		protected string TableHint { get; set; }
 
 		public override int Run(string[] args) {
 			_logger = new Logger(Verbose);
 
-			if (!Overwrite && Directory.Exists(ScriptPath)) {
+			if (!Overwrite && Directory.Exists(ExportDir)) {
 				if (!ConsoleQuestion.AskYN(
-					$"{ScriptPath} already exists - do you want to replace it"))
+					$"{ExportDir} already exists - do you want to replace it"))
 					return 1;
 				Overwrite = true;
 			}
 
-			var scriptCommand = new ScriptCommand {
+			var exportCommand = new ExportCommand {
 				ConnectionString = ConnectionString,
-				ScriptPath = ScriptPath,
-				ObjectTypes = ObjectTypes,
-				NoDependencies = NoDependencies,
+				DataDir = ExportDir,
 				Logger = _logger,
 				Overwrite = Overwrite
 			};
 
-			var filteredTypes = HandleFilteredTypes();
+			if (string.IsNullOrWhiteSpace($"{DataTablesPattern}{DataTables}"))
+				DataTablesPattern = ".";
+			
 			var namesAndSchemas = HandleDataTables(DataTables);
 
 			try {
-				scriptCommand.Execute(namesAndSchemas, DataTablesPattern, DataTablesExcludePattern, filteredTypes);
+				exportCommand.Execute(namesAndSchemas, DataTablesPattern, DataTablesExcludePattern,
+					TableHint);
 			} catch (Exception ex) {
 				throw new ConsoleHelpAsException(ex.Message);
 			}
 
 			return 0;
-		}
-
-		private List<string> HandleFilteredTypes() {
-			var removeTypes = FilterTypes?.Split(',').ToList() ?? new List<string>();
-			var keepTypes = OnlyTypes?.Split(',').ToList() ?? new List<string>(Database.Dirs);
-
-			var invalidTypes = removeTypes.Union(keepTypes).Except(Database.Dirs).ToList();
-			if (invalidTypes.Any()) {
-				var msg = invalidTypes.Count() > 1 ? " are not valid types." :
-					" is not a valid type.";
-				_logger.Log(TraceLevel.Warning, string.Join(", ", invalidTypes.ToArray()) + msg);
-				_logger.Log(TraceLevel.Warning, $"Valid types: {Database.ValidTypes}");
-			}
-
-			return Database.Dirs.Except(keepTypes.Except(removeTypes)).ToList();
 		}
 
 		private Dictionary<string, string> HandleDataTables(string tableNames) {

@@ -6,28 +6,34 @@ using SchemaZen.Library.Command;
 using SchemaZen.Library.Models;
 
 namespace SchemaZen.console {
-	public class Create : BaseCommand {
-		private Logger _logger;
-
-		public Create()
+	public class Import : BaseCommand {
+		public Import()
 			: base(
-				"Create", "Create the specified database from scripts.") { }
+				"Import", "Imports the data from the specified directory.") {
+			HasRequiredOption(
+				"d|importDir=",
+				"The directory from which the data will be imported",
+				o => ImportDir = o);
+		}
+
+		private Logger _logger;
+		protected string ImportDir { get; set; }
 
 		public override int Run(string[] remainingArguments) {
 			_logger = new Logger(Verbose);
 
-			var createCommand = new CreateCommand {
+			var importCommand = new ImportCommand {
 				ConnectionString = ConnectionString,
-				ScriptPath = ScriptPath,
+				DataDir = ImportDir,
 				Logger = _logger,
 				Overwrite = Overwrite
 			};
 
 			try {
-				createCommand.Execute(DatabaseFilesPath);
+				importCommand.Execute();
 			} catch (BatchSqlFileException ex) {
 				_logger.Log(TraceLevel.Info,
-					$"{Environment.NewLine}Create completed with the following errors:");
+					$"{Environment.NewLine}Import completed with the following errors:");
 				foreach (var e in ex.Exceptions) {
 					_logger.Log(TraceLevel.Info,
 						$"- {e.FileName.Replace("/", "\\")} (Line {e.LineNumber}):");

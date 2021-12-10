@@ -25,7 +25,9 @@ namespace SchemaZen.console {
 			return new List<ConsoleCommand> {
 				new Script(),
 				new Create(),
-				new Compare()
+				new Compare(),
+				new Export(),
+				new Import(),
 			};
 		}
 	}

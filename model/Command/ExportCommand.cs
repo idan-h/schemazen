@@ -5,16 +5,17 @@ using System.IO;
 using System.Linq;
 
 namespace SchemaZen.Library.Command {
-	public class ScriptCommand : BaseCommand {
+	public class ExportCommand : BaseCommand {
 		public void Execute(Dictionary<string, string> namesAndSchemas, string dataTablesPattern,
-			string dataTablesExcludePattern, List<string> filteredTypes) {
-			if (!Overwrite && File.Exists(ScriptPath)) {
-				var message = $"{ScriptPath} already exists - you must set overwrite to true";
+			string dataTablesExcludePattern,
+			string tableHint) {
+			if (!Overwrite && Directory.Exists(DataDir)) {
+				var message = $"{DataDir} already exists - you must set overwrite to true";
 				throw new InvalidOperationException(message);
 			}
 
-			var db = CreateDatabase(filteredTypes);
-			db.NoDependencies = NoDependencies;
+			var db = CreateDatabase();
+			db.DataDir = DataDir;
 
 			Logger.Log(TraceLevel.Verbose, "Loading database schema...");
 			db.Load();
@@ -32,10 +33,10 @@ namespace SchemaZen.Library.Command {
 				}
 			}
 
-			db.ScriptToDir(ObjectTypes, Logger.Log);
+			db.ExportData(tableHint, Logger.Log);
 
 			Logger.Log(TraceLevel.Info,
-				$"{Environment.NewLine}Snapshot successfully created at {db.ScriptPath}");
+				$"{Environment.NewLine}Data exported successfully at {db.DataDir}");
 			var routinesWithWarnings = db.Routines.Select(r => new {
 				Routine = r,
 				Warnings = r.Warnings().ToList()

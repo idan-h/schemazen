@@ -1,69 +1,51 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using ManyConsole;
 using Mono.Options;
 using SchemaZen.Library.Command;
 
 namespace SchemaZen.console {
-	internal class Compare : ConsoleCommand {
-		private string _source;
-		private string _target;
-		private string _outDiff;
-		private bool _overwrite;
-		private bool _verbose;
-		private bool _debug;
-
-		public Compare() {
-			IsCommand("Compare", "CreateDiff two databases.");
-			Options = new OptionSet();
-			SkipsCommandSummaryBeforeRunning();
+	internal class Compare : BaseCommand {
+		public Compare()
+			: base(
+				"Compare", "CreateDiff two databases.") {
 			HasRequiredOption(
-				"s|source=",
+				"source=",
 				"Connection string to a database to compare.",
-				o => _source = o);
+				o => Source = o);
 			HasRequiredOption(
-				"t|target=",
+				"target=",
 				"Connection string to a database to compare.",
-				o => _target = o);
-			HasOption(
-				"outFile=",
-				"Create a sql diff file in the specified path.",
-				o => _outDiff = o);
-			HasOption(
-				"o|overwrite",
-				"Overwrite existing target without prompt.",
-				o => _overwrite = o != null);
-			HasOption(
-				"v|verbose",
-				"Enable verbose mode (show detailed changes).",
-				o => _verbose = o != null);
-			HasOption(
-				"debug",
-				"Launch the debugger",
-				o => _debug = o != null);
+				o => Target = o);
 		}
 
+		protected string Source { get; set; }
+		protected string Target { get; set; }
+
 		public override int Run(string[] remainingArguments) {
-			if (_debug) Debugger.Launch();
-			if (!string.IsNullOrEmpty(_outDiff)) {
+			//if (_debug) Debugger.Launch();
+			if (!string.IsNullOrEmpty(ScriptPath)) {
 				Console.WriteLine();
-				if (!_overwrite && File.Exists(_outDiff)) {
-					var question = $"{_outDiff} already exists - do you want to replace it";
+				if (!Overwrite && File.Exists(ScriptPath)) {
+					var question = $"{ScriptPath} already exists - do you want to replace it";
 					if (!ConsoleQuestion.AskYN(question)) {
 						return 1;
 					}
 
-					_overwrite = true;
+					Overwrite = true;
 				}
 			}
 
 			var compareCommand = new CompareCommand {
-				Source = _source,
-				Target = _target,
-				Verbose = _verbose,
-				OutDiff = _outDiff,
-				Overwrite = _overwrite
+				Source = Source,
+				Target = Target,
+				Verbose = Verbose,
+				ScriptPath = ScriptPath,
+				ObjectTypes = ObjectTypes,
+				NoDependencies = NoDependencies,
+				Overwrite = Verbose
 			};
 
 			try {

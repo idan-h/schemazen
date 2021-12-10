@@ -4,20 +4,26 @@
 		public string UserName { get; set; }
 		public string ObjectName { get; set; }
 		public string PermissionType { get; set; }
+		public string StateDescription { get; set; }
 
-		public Permission(string userName, string objectName, string permissionType) {
-			Name = $"{userName}___{objectName}___{permissionType}";
+
+		public Permission(string userName, string objectName, string permissionType, string stateDesc) {
+			Name = $"{userName}___{objectName}___{permissionType}___{stateDesc}";
 			UserName = userName;
 			ObjectName = objectName;
 			PermissionType = permissionType;
+			StateDescription = stateDesc;
 		}
 
 		public string ScriptCreate() {
-			return $@"GRANT {PermissionType} ON [{ObjectName}] TO [{UserName}]";
+			var on = string.IsNullOrEmpty(ObjectName) ? "" : $"ON [{ObjectName}]";
+			return $@"{StateDescription} {PermissionType} {on} TO [{UserName}]";
 		}
 
 		public string ScriptDrop() {
-			return $@"REVOKE {PermissionType} ON [{ObjectName}] TO [{UserName}]";
+			var state = StateDescription == "GRANT" ? "REVOKE" : "GRANT";
+			var on = string.IsNullOrEmpty(ObjectName) ? "" : $"ON [{ObjectName}]";
+			return $@"{state} {PermissionType} {on} TO [{UserName}]";
 		}
 	}
 }

@@ -22,6 +22,7 @@ namespace SchemaZen.Library.Models {
 		public bool Disabled { get; set; }
 		public string RelatedTableSchema { get; set; }
 		public string RelatedTableName { get; set; }
+		public List<Routine> Dependencies { get; set; } = new List<Routine>();
 		public Database Db { get; set; }
 
 		private const string _sqlCreateRegex =

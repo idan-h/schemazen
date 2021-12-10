@@ -1,5 +1,6 @@
 ﻿using ManyConsole;
 using Mono.Options;
+using System.Linq;
 
 namespace SchemaZen.console {
 	public abstract class BaseCommand : ConsoleCommand {
@@ -8,15 +9,11 @@ namespace SchemaZen.console {
 			Options = new OptionSet();
 			SkipsCommandSummaryBeforeRunning();
 
-			HasOption("s|server=", "server", o => Server = o);
-			HasOption("b|database=", "database", o => DbName = o);
 			HasOption("c|connectionString=", "connection string", o => ConnectionString = o);
-			HasOption("u|user=", "user", o => User = o);
-			HasOption("p|pass=", "pass", o => Pass = o);
-			HasRequiredOption(
-				"d|scriptDir=",
-				"Path to database script directory.",
-				o => ScriptDir = o);
+			HasOption(
+				"f|scriptPath=",
+				"Path to database script file.",
+				o => ScriptPath = o);
 			HasOption(
 				"o|overwrite",
 				"Overwrite existing target without prompt.",
@@ -26,19 +23,27 @@ namespace SchemaZen.console {
 				"Enable verbose log messages.",
 				o => Verbose = o != null);
 			HasOption(
-				"f|databaseFilesPath=",
+				"df|databaseFilesPath=",
 				"Path to database data and log files.",
 				o => DatabaseFilesPath = o);
+			HasOption(
+				"t|types=",
+				"The object types to be compared",
+				o => ObjectTypes = o.Split(",")
+									.Select(x => x.Trim())
+									.ToArray());
+			HasOption(
+				"no-depends",
+				"Cancels the routines dependency collection - makes the db loading faster",
+				o => NoDependencies = o != null);
 		}
 
-		protected string Server { get; set; }
-		protected string DbName { get; set; }
 		protected string ConnectionString { get; set; }
-		protected string User { get; set; }
-		protected string Pass { get; set; }
-		protected string ScriptDir { get; set; }
+		protected string ScriptPath { get; set; }
 		protected bool Overwrite { get; set; }
 		protected bool Verbose { get; set; }
 		protected string DatabaseFilesPath { get; set; }
+		protected string[] ObjectTypes { get; set; }
+		protected bool NoDependencies { get; set; }
 	}
 }

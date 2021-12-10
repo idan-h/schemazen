@@ -102,13 +102,13 @@ namespace SchemaZen.Tests {
 			Assert.AreEqual("SQL_Latin1_General_CP1_CI_AS", copy.FindProp("COLLATE").Value);
 		}
 
-		[Test]
-		public void TestCopy() {
-			foreach (var script in Directory.GetFiles(ConfigHelper.TestSchemaDir)) {
-				Console.WriteLine("Testing {0}", script);
-				TestCopySchema(script);
-			}
-		}
+		//[Test]
+		//public void TestCopy() {
+		//	foreach (var script in Directory.GetFiles(ConfigHelper.TestSchemaDir)) {
+		//		Console.WriteLine("Testing {0}", script);
+		//		TestCopySchema(script);
+		//	}
+		//}
 
 		[Test]
 		public void TestTableIndexesWithFilter() {
@@ -305,7 +305,7 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 
 			DBHelper.ExecSql(db.Connection, setupSQL1);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			db.ScriptToDir();
@@ -317,7 +317,8 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 			Assert.AreEqual(-1,
 				db.TableTypes[0].Columns.Items[2].Length); //nvarchar(max) is encoded as -1
 			Assert.AreEqual("MyTableType", db.TableTypes[0].Name);
-			Assert.IsTrue(File.Exists(db.Name + "\\table_types\\TYPE_MyTableType.sql"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			Assert.IsTrue(File.ReadAllText(db.ScriptPath).Contains("CREATE TYPE [dbo].[MyTableType] AS TABLE"));
 		}
 
 		[Test]
@@ -334,6 +335,13 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 
 ";
 
+			var primarykey = @"CREATE TYPE [dbo].[MyTableType] AS TABLE (
+   [ID] [int] NOT NULL,
+   [Value] [varchar](50) NOT NULL
+
+   ,PRIMARY KEY CLUSTERED ([ID])
+)";
+
 			var db = new Database("TestScriptTableTypePrimaryKey");
 
 			db.Connection = ConfigHelper.TestDB.Replace("database=TESTDB", "database=" + db.Name);
@@ -342,7 +350,7 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 
 			DBHelper.ExecSql(db.Connection, setupSQL1);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			db.ScriptToDir();
@@ -352,10 +360,8 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 			Assert.AreEqual("ID", db.TableTypes[0].PrimaryKey.Columns[0].ColumnName);
 			Assert.AreEqual(50, db.TableTypes[0].Columns.Items[1].Length);
 			Assert.AreEqual("MyTableType", db.TableTypes[0].Name);
-			Assert.IsTrue(File.Exists(db.Name + "\\table_types\\TYPE_MyTableType.sql"));
-
-			Assert.IsTrue(File.ReadAllText(db.Name + "\\table_types\\TYPE_MyTableType.sql")
-				.Contains("PRIMARY KEY"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			Assert.IsTrue(File.ReadAllText(db.ScriptPath).Contains(primarykey));
 		}
 
 		[Test]
@@ -367,6 +373,12 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 	[ComputedValue] AS ([VALUE1]+[VALUE2])
 )
 ";
+			var computed = @"CREATE TYPE [dbo].[MyTableType] AS TABLE (
+   [Value1] [int] NOT NULL,
+   [Value2] [int] NOT NULL,
+   [ComputedValue] AS ([VALUE1]+[VALUE2])
+)";
+
 			var db = new Database("TestScriptTableTypeComputedColumn");
 
 			db.Connection = ConfigHelper.TestDB.Replace("database=TESTDB", "database=" + db.Name);
@@ -375,7 +387,7 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 
 			DBHelper.ExecSql(db.Connection, setupSQL1);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			db.ScriptToDir();
@@ -385,7 +397,8 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 			Assert.AreEqual("ComputedValue", db.TableTypes[0].Columns.Items[2].Name);
 			Assert.AreEqual("([VALUE1]+[VALUE2])", db.TableTypes[0].Columns.Items[2].ComputedDefinition);
 			Assert.AreEqual("MyTableType", db.TableTypes[0].Name);
-			Assert.IsTrue(File.Exists(db.Name + "\\table_types\\TYPE_MyTableType.sql"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			Assert.IsTrue(File.ReadAllText(db.ScriptPath).Contains(computed));
 		}
 
 		[Test]
@@ -397,6 +410,14 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 	[LongNVarchar] [nvarchar](max) NULL
 )
 ";
+			var check = @"CREATE TYPE [dbo].[MyTableType] AS TABLE (
+   [ID] [nvarchar](250) NULL,
+   [Value] [numeric](5,1) NULL,
+   [LongNVarchar] [nvarchar](max) NULL
+
+   ,CHECK  ([Value]>(0))
+)";
+
 			var db = new Database("TestScriptTableTypeColumnCheckConstraint");
 
 			db.Connection = ConfigHelper.TestDB.Replace("database=TESTDB", "database=" + db.Name);
@@ -405,7 +426,7 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 
 			DBHelper.ExecSql(db.Connection, setupSQL1);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			db.ScriptToDir();
@@ -415,7 +436,8 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 			var constraint = db.TableTypes[0].Constraints.First();
 			Assert.AreEqual("([Value]>(0))", constraint.CheckConstraintExpression);
 			Assert.AreEqual("MyTableType", db.TableTypes[0].Name);
-			Assert.IsTrue(File.Exists(db.Name + "\\table_types\\TYPE_MyTableType.sql"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			Assert.IsTrue(File.ReadAllText(db.ScriptPath).Contains(check));
 		}
 
 		[Test]
@@ -427,6 +449,13 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 	[LongNVarchar] [nvarchar](max) NULL
 )
 ";
+			var constraint = @"CREATE TYPE [dbo].[MyTableType] AS TABLE (
+   [ID] [nvarchar](250) NULL,
+   [Value] [numeric](5,1) NULL
+       DEFAULT ((0)),
+   [LongNVarchar] [nvarchar](max) NULL
+)";
+
 			var db = new Database("TestScriptTableTypeColumnDefaultConstraint");
 
 			db.Connection = ConfigHelper.TestDB.Replace("database=TESTDB", "database=" + db.Name);
@@ -435,7 +464,7 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 
 			DBHelper.ExecSql(db.Connection, setupSQL1);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			db.ScriptToDir();
@@ -445,7 +474,8 @@ CREATE TYPE [dbo].[MyTableType] AS TABLE(
 			Assert.AreEqual(" DEFAULT ((0))", db.TableTypes[0].Columns.Items[1].Default.ScriptCreate());
 
 			Assert.AreEqual("MyTableType", db.TableTypes[0].Name);
-			Assert.IsTrue(File.Exists(db.Name + "\\table_types\\TYPE_MyTableType.sql"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			Assert.IsTrue(File.ReadAllText(db.ScriptPath).Contains(constraint));
 		}
 
 		[Test]
@@ -487,7 +517,7 @@ CREATE TABLE [s2].[t2b]
 
 			DBHelper.ExecSql(db.Connection, setupSQL);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			// Required in order to expose the exception
@@ -527,6 +557,9 @@ CREATE TRIGGER [dbo].[TR_v1] ON [dbo].[v1] INSTEAD OF DELETE AS
     DELETE FROM [dbo].[t1] FROM [dbo].[t1] INNER JOIN DELETED ON DELETED.a = [dbo].[t1].a
 
 ";
+			var view = @"CREATE TRIGGER [dbo].[TR_v1] ON [dbo].[v1] INSTEAD OF DELETE AS
+
+    DELETE FROM [dbo].[t1] FROM [dbo].[t1] INNER JOIN DELETED ON DELETED.a = [dbo].[t1].a";
 
 			var db = new Database("TestScriptViewInsteadOfTrigger");
 
@@ -538,7 +571,7 @@ CREATE TRIGGER [dbo].[TR_v1] ON [dbo].[v1] INSTEAD OF DELETE AS
 			DBHelper.ExecSql(db.Connection, setupSQL2);
 			DBHelper.ExecSql(db.Connection, setupSQL3);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			// Required in order to expose the exception
@@ -549,7 +582,8 @@ CREATE TRIGGER [dbo].[TR_v1] ON [dbo].[v1] INSTEAD OF DELETE AS
 
 			Assert.AreEqual(1, triggers.Count());
 			Assert.AreEqual("TR_v1", triggers[0].Name);
-			Assert.IsTrue(File.Exists(db.Name + "\\triggers\\TR_v1.sql"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			Assert.IsTrue(File.ReadAllText(db.ScriptPath).Contains(view));
 		}
 
 		[Test]
@@ -588,12 +622,12 @@ AS INSERT INTO [dbo].[t2](a) SELECT a FROM INSERTED";
 			DBHelper.ExecSql(db.Connection, setupSQL2);
 			DBHelper.ExecSql(db.Connection, setupSQL3);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
 			db.ScriptToDir();
 
-			var script = File.ReadAllText(db.Name + "\\triggers\\TR_1.sql");
+			var script = File.ReadAllText(db.ScriptPath);
 
 			StringAssert.DoesNotContain("INSERTEDENABLE", script);
 		}
@@ -744,35 +778,35 @@ select * from Table1
 
 			db.DataTables.Add(formType);
 			db.DataTables.Add(emptyTable);
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name;
 
-			if (Directory.Exists(db.Dir))
-				Directory.Delete(db.Dir, true);
+			if (File.Exists(db.ScriptPath))
+				File.Delete(db.ScriptPath);
 
 			db.ScriptToDir();
-			Assert.IsTrue(Directory.Exists(db.Name));
-			Assert.IsTrue(Directory.Exists(db.Name + "\\data"));
-			Assert.IsTrue(Directory.Exists(db.Name + "\\tables"));
-			Assert.IsTrue(Directory.Exists(db.Name + "\\foreign_keys"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			var fileContents = File.ReadAllText(db.ScriptPath);
+			//Assert.IsTrue(Directory.Exists(db.Name + "\\data"));
+			Assert.IsTrue(fileContents.Contains("tables.sql"));
+			Assert.IsTrue(fileContents.Contains("foreign_keys.sql"));
 
-			foreach (var t in db.DataTables) {
-				if (t.Name == "EmptyTable") {
-					Assert.IsFalse(File.Exists(db.Name + "\\data\\" + t.Name + ".tsv"));
-				} else {
-					Assert.IsTrue(File.Exists(db.Name + "\\data\\" + t.Name + ".tsv"));
-				}
-			}
+			//foreach (var t in db.DataTables) {
+			//	if (t.Name == "EmptyTable") {
+			//		Assert.IsFalse(File.Exists(db.Name + "\\data\\" + t.Name + ".tsv"));
+			//	} else {
+			//		Assert.IsTrue(File.Exists(db.Name + "\\data\\" + t.Name + ".tsv"));
+			//	}
+			//}
 
 			foreach (var t in db.Tables) {
-				var tblFile = db.Name + "\\tables\\" + t.Name + ".sql";
-				Assert.IsTrue(File.Exists(tblFile));
+				var tblstring = t.ScriptCreate();
+				Assert.IsTrue(fileContents.Contains(tblstring));
 
 				// Test that the constraints are ordered in the file
-				var script = File.ReadAllText(tblFile);
 				var cindex = -1;
 
 				foreach (var ckobject in t.Constraints.Where(c=>c.Type != "CHECK").OrderBy(x => x.Name)) {
-					var thisindex = script.IndexOf(ckobject.ScriptCreate());
+					var thisindex = tblstring.IndexOf(ckobject.ScriptCreate());
 					Assert.Greater(thisindex, cindex, "Constraints are not ordered.");
 
 					cindex = thisindex;
@@ -780,34 +814,31 @@ select * from Table1
 			}
 
 			foreach (var t in db.TableTypes) {
-				Assert.IsTrue(File.Exists(db.Name + "\\table_types\\TYPE_" + t.Name + ".sql"));
+				Assert.IsTrue(fileContents.Contains(t.ScriptCreate()));
 			}
 
-			foreach (var expected in db.ForeignKeys.Select(fk =>
-				db.Name + "\\foreign_keys\\" + fk.Table.Name + ".sql")) {
-				Assert.IsTrue(File.Exists(expected), "File does not exist" + expected);
+			foreach (var expected in db.ForeignKeys.Select(fk => fk.ScriptCreate())) {
+				Assert.IsTrue(fileContents.Contains(expected), "File not contains " + expected);
 			}
 
 			// Test that the foreign keys are ordered in the file
-			foreach (var t in db.Tables) {
-				var fksFile = db.Name + "\\foreign_keys\\" + t.Name + ".sql";
+			//foreach (var t in db.Tables) {
 
-				if (File.Exists(fksFile)) {
-					var script = File.ReadAllText(fksFile);
-					var fkindex = -1;
+			//	t.ForeignKeys.OrderBy(x => x, ForeignKeyComparer.Instance).ToArray()
+			//	var script = t.ScriptCreate();
+			//	var fkindex = -1;
 
-					foreach (var fkobject in db.ForeignKeys.Where(x => x.Table == t)
-						.OrderBy(x => x.Name)) {
-						var thisindex = script.IndexOf(fkobject.ScriptCreate());
-						Assert.Greater(thisindex, fkindex, "Foreign keys are not ordered.");
+			//	foreach (var fkobject in db.ForeignKeys.Where(x => x.Table == t)
+			//		.OrderBy(x => x.Name)) {
+			//		var thisindex = script.IndexOf(fkobject.ScriptCreate());
+			//		Assert.Greater(thisindex, fkindex, "Foreign keys are not ordered.");
 
-						fkindex = thisindex;
-					}
-				}
-			}
+			//		fkindex = thisindex;
+			//	}
+			//}
 
 			var copy = new Database("ScriptToDirTestCopy");
-			copy.Dir = db.Dir;
+			copy.ScriptPath = db.ScriptPath;
 			copy.Connection =
 				ConfigHelper.TestDB.Replace("database=TESTDB", "database=" + copy.Name);
 			copy.CreateFromDir(true);
@@ -823,13 +854,13 @@ select * from Table1
 
 			db.ExecCreate(true);
 
-			db.Dir = db.Name;
+			db.ScriptPath = db.Name + ".sql";
 			db.Load();
 
-			if (Directory.Exists(db.Dir)
-			) // if the directory exists, delete it to make it a fair test
+			if (File.Exists(db.ScriptPath)
+			) // if the file exists, delete it to make it a fair test
 			{
-				Directory.Delete(db.Dir, true);
+				File.Delete(db.ScriptPath);
 			}
 
 			db.ScriptToDir();
@@ -845,22 +876,24 @@ select * from Table1
 			Assert.AreEqual(0, db.Users.Count);
 			Assert.AreEqual(0, db.ViewIndexes.Count);
 
-			Assert.IsTrue(Directory.Exists(db.Name));
-			Assert.IsTrue(File.Exists(db.Name + "\\props.sql"));
-			//Assert.IsFalse(File.Exists(db.Name + "\\schemas.sql"));
+			Assert.IsTrue(File.Exists(db.ScriptPath));
+			var fileContent = File.ReadAllText(db.ScriptPath);
+			var propsPart = fileContent[endIndexOf(fileContent, "-- props.sql")..fileContent.IndexOf("-- users.sql")];
+			var assembliesPart = fileContent[endIndexOf(fileContent, "-- assemblies.sql")..fileContent.IndexOf("-- synonyms.sql")];
+			var foreignkeysPart = fileContent[endIndexOf(fileContent, "-- foreign_keys.sql")..fileContent.IndexOf("-- permissions.sql")];
+			var tablesTypesPart = fileContent[endIndexOf(fileContent, "-- table_types.sql")..fileContent.IndexOf("-- user_defined_types.sql")];
+			var usersPart = fileContent[endIndexOf(fileContent, "-- users.sql")..fileContent.IndexOf("-- roles.sql")];
 
-			Assert.IsFalse(Directory.Exists(db.Name + "\\assemblies"));
-			Assert.IsFalse(Directory.Exists(db.Name + "\\data"));
-			Assert.IsFalse(Directory.Exists(db.Name + "\\foreign_keys"));
-			foreach (var routineType in Enum.GetNames(typeof(Routine.RoutineKind))) {
-				var dir = routineType.ToLower() + "s";
-				Assert.IsFalse(Directory.Exists(db.Name + "\\" + dir));
+			Assert.IsTrue(!string.IsNullOrWhiteSpace(propsPart));
+			Assert.IsTrue(string.IsNullOrWhiteSpace(assembliesPart));
+			Assert.IsTrue(string.IsNullOrWhiteSpace(foreignkeysPart));
+			Assert.IsTrue(string.IsNullOrWhiteSpace(tablesTypesPart));
+			Assert.IsTrue(string.IsNullOrWhiteSpace(usersPart));
+
+			int endIndexOf(string content, string toSearch)
+			{
+				return content.IndexOf(toSearch) + toSearch.Length;
 			}
-
-			Assert.IsFalse(Directory.Exists(db.Name + "\\synonyms"));
-			Assert.IsFalse(Directory.Exists(db.Name + "\\tables"));
-			Assert.IsFalse(Directory.Exists(db.Name + "\\table_types"));
-			Assert.IsFalse(Directory.Exists(db.Name + "\\users"));
 		}
 	}
 }
