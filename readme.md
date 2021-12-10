@@ -64,7 +64,8 @@ See ```SchemaZen.exe help [command]``` for more information and options on each 
   
 
 ## SSDT
-This project was meant to work with SSDT but without using their deployment system to the have more flexibility over the migrations.  
+This project was meant to work with SSDT but without using their deployment system to enable more flexibility over the migrations.  
+You would need an additional library like DbUp or so.  
 PS scripts will be added in the future to support this functionality.  
 The idea is, to do changes via SSDT (for example alter a stored procedure) and then run a command in the PM Console to generate a script from the changes.
 I Like to remove all the routines pre-migration and append them post-migration so they will only appear once in the migration process and to solve dependency issues.  
