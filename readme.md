@@ -1,6 +1,6 @@
-# Schema Zen - Script and create SQL Server objects quickly
+# Schema Zen Plus - Script and create SQL Server objects quickly & additional SSDT support
 
-## Schema Zen has three main commands:
+## Schema Zen Plus has five main commands:
 
 ### script
 
@@ -42,7 +42,7 @@ Another added option, is to specify which object types to script from the below 
 ```
 [props, users, tables, assemblies, synonyms, routines, fks, permissions]
 ```  
-Use it like: `-t users,roles,tables`  
+Use it like: `-t users,tables`  
 If empty, includes all
 
 
@@ -59,7 +59,7 @@ This will export the data from the database to `c:\somedir\data`
 
 This will import the data from the folder `c:\somedir\data` to the database
   
-
+  
 See ```SchemaZen.exe help [command]``` for more information and options on each command.
   
 
