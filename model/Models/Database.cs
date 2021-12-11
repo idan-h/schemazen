@@ -39,7 +39,7 @@ namespace SchemaZen.Library.Models {
 			Props.Add(new DbProp("TRUSTWORTHY", ""));
 			Props.Add(new DbProp("DB_CHAINING", ""));
 			Props.Add(new DbProp("PARAMETERIZATION", ""));
-			Props.Add(new DbProp("DATE_CORRELATION_OPTIMIZATION", ""));
+			//Props.Add(new DbProp("DATE_CORRELATION_OPTIMIZATION", "")); // This has caused infinite loop for some reason
 
 			filteredTypes = filteredTypes ?? new List<string>();
 			foreach (var filteredType in filteredTypes) {
@@ -150,7 +150,7 @@ namespace SchemaZen.Library.Models {
 		public static HashSet<string> Dirs { get; } = new HashSet<string> {
 			"user_defined_types", "tables", "foreign_keys", "assemblies", "functions", "procedures",
 			"triggers", "views", "xmlschemacollections", "data", "roles", "users", "synonyms",
-			"table_types", "schemas", "props", "permissions", "check_constraints", "defaults"
+			"table_types", "schemas", "props", "permissions", "check_constraints", "defaults", "routines"
 		};
 
 		public static string ValidTypes {
@@ -1142,7 +1142,7 @@ where name = @dbname
 							(bool)dr["is_parameterization_forced"] ? "FORCED" : "SIMPLE";
 					}
 
-					SetPropOnOff("DATE_CORRELATION_OPTIMIZATION", dr["is_date_correlation_on"]);
+					//SetPropOnOff("DATE_CORRELATION_OPTIMIZATION", dr["is_date_correlation_on"]);
 				}
 			}
 		}
@@ -1151,14 +1151,12 @@ where name = @dbname
 
 		#region Compare
 
-		public DatabaseDiff Compare(Database db, string[] objTypes = null) {
+		public DatabaseDiff Compare(Database db) {
 			var diff = new DatabaseDiff {
 				Db = db
 			};
 
-			objTypes ??= Array.Empty<string>();
-
-			if (!objTypes.Any() || objTypes.Contains("props")) {
+			if (Dirs.Contains("props")) {
 				//compare database properties
 				foreach (var p in from p in Props
 				let p2 = db.FindProp(p.Name)
@@ -1168,7 +1166,7 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("tables")) {
+			if (Dirs.Contains("tables")) {
 				//get tables added and changed
 				foreach (var tables in new[] { Tables, TableTypes }) {
 					foreach (var t in tables) {
@@ -1197,7 +1195,8 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("routines")) {
+			if (Dirs.Contains("routines") ||
+				Dirs.Contains("procedures") && Dirs.Contains("functions") && Dirs.Contains("views")) {
 				//get procs added and changed
 				foreach (var r in Routines) {
 					var r2 = db.FindRoutine(r.Name, r.Owner);
@@ -1217,7 +1216,7 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("fks")) {
+			if (Dirs.Contains("foreign_keys")) {
 				//get added and compare mutual foreign keys
 				foreach (var fk in ForeignKeys)
 				{
@@ -1243,7 +1242,7 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("assemblies")) {
+			if (Dirs.Contains("assemblies")) {
 				//get added and compare mutual assemblies
 				foreach (var a in Assemblies)
 				{
@@ -1268,7 +1267,7 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("users")) {
+			if (Dirs.Contains("users")) {
 				//get added and compare mutual users
 				foreach (var u in Users)
 				{
@@ -1316,7 +1315,7 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("synonyms"))
+			if (Dirs.Contains("synonyms"))
 			{
 				//get added and compare synonyms
 				foreach (var s in Synonyms)
@@ -1342,7 +1341,7 @@ where name = @dbname
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("permissions"))
+			if (Dirs.Contains("permissions"))
 			{
 				//get added and compare permissions
 				foreach (var p in Permissions)
@@ -1458,7 +1457,7 @@ where name = @dbname
 			return text.ToString();
 		}
 
-		public void ScriptToDir(string[] objTypes = null, Action<TraceLevel, string> log = null) {
+		public void ScriptToDir(Action<TraceLevel, string> log = null) {
 			if (log == null) log = (tl, s) => { };
 
 			if (File.Exists(ScriptPath)) {
@@ -1470,140 +1469,115 @@ where name = @dbname
 				log(TraceLevel.Verbose, "Existing file deleted.");
 			}
 
-			objTypes ??= Array.Empty<string>();
-
 			var text = new StringBuilder();
 			text.AppendLine($"-- Always check the migration script before you apply it");
 
-			if (!objTypes.Any() || objTypes.Contains("props"))
-			{
-				WritePropsScript(text, log);
-			}
 
-			if (!objTypes.Any() || objTypes.Contains("users"))
-			{
-				text.AppendLine($"-- users.sql");
-				WriteScriptDir(text, "users", Users.ToArray(), log);
-			}
+			WritePropsScript(text, log);
 
-			if (!objTypes.Any() || objTypes.Contains("roles"))
-			{
-				text.AppendLine($"-- roles.sql");
-				WriteScriptDir(text, "roles", Roles.ToArray(), log);
-			}
+			text.AppendLine($"-- users.sql");
+			WriteScriptDir(text, "users", Users.ToArray(), log);
 
-			if (!objTypes.Any() || objTypes.Contains("schema"))
-			{
-				WriteSchemaScript(text, log);
-			}
+			text.AppendLine($"-- roles.sql");
+			WriteScriptDir(text, "roles", Roles.ToArray(), log);
 
-			if (!objTypes.Any() || objTypes.Contains("tables"))
-			{
-				text.AppendLine($"-- tables.sql");
-				text.AppendLine("GO");
-				text.AppendLine("SET ANSI_NULLS ON");
-				text.AppendLine("GO");
-				WriteScriptDir(text, "tables", Tables.ToArray(), log);
-			}
+			WriteSchemaScript(text, log);
 
-			if (!objTypes.Any() || objTypes.Contains("constraints"))
+			text.AppendLine($"-- tables.sql");
+			text.AppendLine("GO");
+			text.AppendLine("SET ANSI_NULLS ON");
+			text.AppendLine("GO");
+			WriteScriptDir(text, "tables", Tables.ToArray(), log);
+
+			text.AppendLine($"-- constraints_and_defaults.sql");
+			foreach (var table in Tables)
 			{
-				text.AppendLine($"-- check_constraints.sql");
-				foreach (var table in Tables)
+				WriteScriptDir(text, "check_constraints", table.Constraints.Where(c => c.Type == "CHECK").ToArray(), log);
+
+				var defaults = (from c in table.Columns.Items
+								where c.Default != null
+								select c.Default).ToArray();
+
+				if (defaults.Any())
 				{
-					WriteScriptDir(text, "check_constraints", table.Constraints.Where(c => c.Type == "CHECK").ToArray(), log);
-
-					var defaults = (from c in table.Columns.Items
-									where c.Default != null
-									select c.Default).ToArray();
-
-					if (defaults.Any())
-					{
-						WriteScriptDir(text, "defaults", defaults, log);
-					}
+					WriteScriptDir(text, "defaults", defaults, log);
 				}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("usertypes"))
+			text.AppendLine($"-- table_types.sql");
+			WriteScriptDir(text, "table_types", TableTypes.ToArray(), log);
+			text.AppendLine($"-- user_defined_types.sql");
+			WriteScriptDir(text, "user_defined_types", UserDefinedTypes.ToArray(), log);
+
+			text.AppendLine($"-- assemblies.sql");
+			WriteScriptDir(text, "assemblies", Assemblies.ToArray(), log);
+
+			text.AppendLine($"-- synonyms.sql");
+			WriteScriptDir(text, "synonyms", Synonyms.ToArray(), log);
+
+
+			var doneRoutines = new List<Routine>();
+			text.AppendLine($"-- functions and views.sql");
+			var functionsAndViews = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Function || x.RoutineType == Routine.RoutineKind.View).ToList();
+			WriteRoutinesScript(text, functionsAndViews,
+				routine => !Dirs.Contains("views") && routine.RoutineType == Routine.RoutineKind.View || !Dirs.Contains("functions") && routine.RoutineType == Routine.RoutineKind.Function, doneRoutines);
+
+			//for (var i = 0; i < functionsAndViews.Count; i++)
+			//{
+			//	var routine = functionsAndViews[i];
+			//	if (!Dirs.Contains("views") && routine.RoutineType == Routine.RoutineKind.View ||
+			//		!Dirs.Contains("functions") && routine.RoutineType == Routine.RoutineKind.Function)
+			//		continue;
+
+			//	if (!routine.Dependencies.Any() || !routine.Dependencies.Except(doneRoutines).Any())
+			//	{
+			//		text.AppendLine(routine.ScriptCreate());
+			//		doneRoutines.Add(routine);
+			//	}
+			//	else
+			//	{
+			//		functionsAndViews.RemoveAt(i);
+			//		functionsAndViews.Add(routine);
+			//		i--;
+			//	}
+			//}
+
+			if (Dirs.Contains("procedures"))
 			{
-				text.AppendLine($"-- table_types.sql");
-				WriteScriptDir(text, "table_types", TableTypes.ToArray(), log);
-				text.AppendLine($"-- user_defined_types.sql");
-				WriteScriptDir(text, "user_defined_types", UserDefinedTypes.ToArray(), log);
-			}
-
-			if (!objTypes.Any() || objTypes.Contains("assemblies"))
-			{
-				text.AppendLine($"-- assemblies.sql");
-				WriteScriptDir(text, "assemblies", Assemblies.ToArray(), log);
-			}
-
-			if (!objTypes.Any() || objTypes.Contains("synonyms"))
-			{
-				text.AppendLine($"-- synonyms.sql");
-				WriteScriptDir(text, "synonyms", Synonyms.ToArray(), log);
-			}
-
-			if (!objTypes.Any() || objTypes.Contains("routines"))
-			{
-				var doneRoutines = new List<Routine>();
-				text.AppendLine($"-- functions and views.sql");
-				var functionsAndViews = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Function || x.RoutineType == Routine.RoutineKind.View).ToList();
-				for (var i = 0; i < functionsAndViews.Count; i++)
-				{
-					var routine = functionsAndViews[i];
-					if (!routine.Dependencies.Any() || !routine.Dependencies.Except(doneRoutines).Any())
-					{
-						text.AppendLine(routine.ScriptCreate());
-						doneRoutines.Add(routine);
-					}
-					else
-					{
-						functionsAndViews.RemoveAt(i);
-						functionsAndViews.Add(routine);
-						i--;
-					}
-
-				}
-
 				text.AppendLine($"-- procedures.sql");
 				var procedures = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Procedure).ToList();
-				for (var i = 0; i < procedures.Count; i++)
-				{
-					var routine = procedures[i];
-					if (!routine.Dependencies.Any() || !routine.Dependencies.Except(doneRoutines).Any())
-					{
-						text.AppendLine(routine.ScriptCreate());
-						doneRoutines.Add(routine);
-					}
-					else
-					{
-						procedures.RemoveAt(i);
-						procedures.Add(routine);
-						i--;
-					}
-				}
+				WriteRoutinesScript(text, procedures, null, doneRoutines);
 
-				text.AppendLine($"-- view indexes.sql");
-				WriteScriptDir(text, "view indexes", ViewIndexes.ToArray(), log);
-
-				text.AppendLine($"-- triggers.sql");
-				var triggers = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Trigger);
-				WriteScriptDir(text, "triggers", triggers.ToArray(), log);
+				//for (var i = 0; i < procedures.Count; i++)
+				//{
+				//	var routine = procedures[i];
+				//	if (!routine.Dependencies.Any() || !routine.Dependencies.Except(doneRoutines).Any())
+				//	{
+				//		text.AppendLine(routine.ScriptCreate());
+				//		doneRoutines.Add(routine);
+				//	}
+				//	else
+				//	{
+				//		procedures.RemoveAt(i);
+				//		procedures.Add(routine);
+				//		i--;
+				//	}
+				//}
 			}
 
-			if (!objTypes.Any() || objTypes.Contains("fks"))
-			{
-				text.AppendLine($"-- foreign_keys.sql");
-				WriteScriptDir(text, "foreign_keys",
-					ForeignKeys.OrderBy(x => x, ForeignKeyComparer.Instance).ToArray(), log);
-			}
+			text.AppendLine($"-- view indexes.sql");
+			WriteScriptDir(text, "view indexes", ViewIndexes.ToArray(), log);
 
-			if (!objTypes.Any() || objTypes.Contains("permissions"))
-			{
-				text.AppendLine($"-- permissions.sql");
-				WriteScriptDir(text, "permissions", Permissions.ToArray(), log);
-			}
+			text.AppendLine($"-- triggers.sql");
+			var triggers = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Trigger);
+			WriteScriptDir(text, "triggers", triggers.ToArray(), log);
+
+			text.AppendLine($"-- foreign_keys.sql");
+			WriteScriptDir(text, "foreign_keys",
+				ForeignKeys.OrderBy(x => x, ForeignKeyComparer.Instance).ToArray(), log);
+			
+			text.AppendLine($"-- permissions.sql");
+			WriteScriptDir(text, "permissions", Permissions.ToArray(), log);
 
 			File.WriteAllText(ScriptPath, text.ToString());
 		}
@@ -1625,6 +1599,27 @@ where name = @dbname
 			}
 
 			text.AppendLine();
+		}
+
+		private void WriteRoutinesScript(StringBuilder text, List<Routine> routines,
+			Func<Routine, bool> check, List<Routine> done) {
+			for (var i = 0; i < routines.Count; i++)
+			{
+				var routine = routines[i];
+				if (check?.Invoke(routine) ?? false) continue;
+
+				if (!routine.Dependencies.Any() || !routine.Dependencies.Except(done).Any())
+				{
+					text.AppendLine(routine.ScriptCreate());
+					done.Add(routine);
+				}
+				else
+				{
+					routines.RemoveAt(i);
+					routines.Add(routine);
+					i--;
+				}
+			}
 		}
 
 		private void WriteScriptDir(StringBuilder text, string name, ICollection<IScriptable> objects,

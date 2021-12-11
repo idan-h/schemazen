@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using ManyConsole;
 using Mono.Options;
+using SchemaZen.Library;
 using SchemaZen.Library.Command;
+using SchemaZen.Library.Models;
 
 namespace SchemaZen.console {
 	internal class Compare : BaseCommand {
@@ -19,12 +21,26 @@ namespace SchemaZen.console {
 				"target=",
 				"Connection string to a database to compare.",
 				o => Target = o);
+			HasOption(
+				"filterTypes=",
+				"A comma separated list of the types that will not be scripted. Valid types: " +
+				Database.ValidTypes,
+				o => FilterTypes = o);
+			HasOption(
+				"onlyTypes=",
+				"A comma separated list of the types that will only be scripted. Valid types: " +
+				Database.ValidTypes,
+				o => OnlyTypes = o);
 		}
 
 		protected string Source { get; set; }
 		protected string Target { get; set; }
+		protected string FilterTypes { get; set; }
+		protected string OnlyTypes { get; set; }
 
 		public override int Run(string[] remainingArguments) {
+			var logger = new Logger(Verbose);
+
 			//if (_debug) Debugger.Launch();
 			if (!string.IsNullOrEmpty(ScriptPath)) {
 				Console.WriteLine();
@@ -43,13 +59,15 @@ namespace SchemaZen.console {
 				Target = Target,
 				Verbose = Verbose,
 				ScriptPath = ScriptPath,
-				ObjectTypes = ObjectTypes,
 				NoDependencies = NoDependencies,
 				Overwrite = Verbose
 			};
 
-			try {
-				return compareCommand.Execute() ? 1 : 0;
+			var filteredTypes = TypesHelper.HandleFilteredTypes(FilterTypes, OnlyTypes, logger);
+
+			try
+			{
+				return compareCommand.Execute(filteredTypes) ? 1 : 0;
 			} catch (Exception ex) {
 				throw new ConsoleHelpAsException(ex.Message);
 			}

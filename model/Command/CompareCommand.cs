@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using SchemaZen.Library.Models;
 
@@ -8,9 +9,9 @@ namespace SchemaZen.Library.Command {
 		public string Target { get; set; }
 		public bool Verbose { get; set; }
 
-		public bool Execute() {
-			var sourceDb = new Database();
-			var targetDb = new Database();
+		public bool Execute(List<string> filteredTypes) {
+			var sourceDb = new Database(filteredTypes);
+			var targetDb = new Database(filteredTypes);
 			sourceDb.Connection = Source;
 			targetDb.Connection = Target;
 			//sourceDb.NoDependencies = NoDependencies;
@@ -20,7 +21,7 @@ namespace SchemaZen.Library.Command {
 			Console.WriteLine("Loading target...");
 			targetDb.Load();
 			Console.WriteLine("Starting comparison...");
-			var diff = sourceDb.Compare(targetDb, ObjectTypes);
+			var diff = sourceDb.Compare(targetDb);
 			if (diff.IsDiff) {
 				Console.WriteLine("Databases are different.");
 				Console.WriteLine(diff.SummarizeChanges(Verbose));

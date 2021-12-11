@@ -18,7 +18,7 @@
     <RootNamespace>SchemaZen.console</RootNamespace>
     <ApplicationIcon />
     <StartupObject />
-    <AssemblyName>SchemaZenPlus.Console</AssemblyName>
+    <AssemblyName>SchemaZenPlus</AssemblyName>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

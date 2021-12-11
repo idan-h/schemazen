@@ -6,8 +6,7 @@ using System.Linq;
 
 namespace SchemaZen.Library.Command {
 	public class ScriptCommand : BaseCommand {
-		public void Execute(Dictionary<string, string> namesAndSchemas, string dataTablesPattern,
-			string dataTablesExcludePattern, List<string> filteredTypes) {
+		public void Execute(List<string> filteredTypes) {
 			if (!Overwrite && File.Exists(ScriptPath)) {
 				var message = $"{ScriptPath} already exists - you must set overwrite to true";
 				throw new InvalidOperationException(message);
@@ -16,23 +15,11 @@ namespace SchemaZen.Library.Command {
 			var db = CreateDatabase(filteredTypes);
 			db.NoDependencies = NoDependencies;
 
-			Logger.Log(TraceLevel.Verbose, "Loading database schema...");
+			Logger.Log(TraceLevel.Info, "Loading database schema...");
 			db.Load();
-			Logger.Log(TraceLevel.Verbose, "Database schema loaded.");
+			Logger.Log(TraceLevel.Info, "Database schema loaded.");
 
-			foreach (var nameAndSchema in namesAndSchemas) {
-				AddDataTable(db, nameAndSchema.Key, nameAndSchema.Value);
-			}
-
-			if (!string.IsNullOrEmpty(dataTablesPattern) ||
-				!string.IsNullOrEmpty(dataTablesExcludePattern)) {
-				var tables = db.FindTablesRegEx(dataTablesPattern, dataTablesExcludePattern);
-				foreach (var t in tables.Where(t => !db.DataTables.Contains(t))) {
-					db.DataTables.Add(t);
-				}
-			}
-
-			db.ScriptToDir(ObjectTypes, Logger.Log);
+			db.ScriptToDir(Logger.Log);
 
 			Logger.Log(TraceLevel.Info,
 				$"{Environment.NewLine}Snapshot successfully created at {db.ScriptPath}");

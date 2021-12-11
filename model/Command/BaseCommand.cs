@@ -10,7 +10,6 @@ namespace SchemaZen.Library.Command {
 		public string DataDir { get; set; }
 		public ILogger Logger { get; set; }
 		public bool Overwrite { get; set; }
-		public string[] ObjectTypes { get; set; }
 		public bool NoDependencies { get; set; }
 
 		public Database CreateDatabase(IList<string> filteredTypes = null) {

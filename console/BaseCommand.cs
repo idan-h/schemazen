@@ -27,12 +27,6 @@ namespace SchemaZen.console {
 				"Path to database data and log files.",
 				o => DatabaseFilesPath = o);
 			HasOption(
-				"t|types=",
-				"The object types to be compared",
-				o => ObjectTypes = o.Split(",")
-									.Select(x => x.Trim())
-									.ToArray());
-			HasOption(
 				"no-depends",
 				"Cancels the routines dependency collection - makes the db loading faster",
 				o => NoDependencies = o != null);
@@ -43,7 +37,6 @@ namespace SchemaZen.console {
 		protected bool Overwrite { get; set; }
 		protected bool Verbose { get; set; }
 		protected string DatabaseFilesPath { get; set; }
-		protected string[] ObjectTypes { get; set; }
 		protected bool NoDependencies { get; set; }
 	}
 }
