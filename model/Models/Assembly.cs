@@ -24,11 +24,11 @@ namespace SchemaZen.Library.Models {
 			var commands = Files.Select((kvp, index) => {
 				if (index == 0) {
 					return
-						$"CREATE ASSEMBLY [{Name}]\r\n{string.Empty}FROM {"0x" + Convert.ToHexString(kvp.Value)}\r\n{"WITH PERMISSION_SET = " + PermissionSet}";
+						$"CREATE ASSEMBLY [{Name}]\r\n{string.Empty}FROM {"0x" + StringUtil.ByteArrayToHexString(kvp.Value)}\r\n{"WITH PERMISSION_SET = " + PermissionSet}";
 				}
 
 				return
-					$"ALTER ASSEMBLY [{Name}]\r\nADD FILE FROM {"0x" + Convert.ToHexString(kvp.Value)}\r\nAS N\'{kvp.Key}\'";
+					$"ALTER ASSEMBLY [{Name}]\r\nADD FILE FROM {"0x" + StringUtil.ByteArrayToHexString(kvp.Value)}\r\nAS N\'{kvp.Key}\'";
 			});
 
 			var script = string.Join("\r\nGO\r\n", commands.ToArray());

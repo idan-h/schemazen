@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-	<PublishTrimmed>true</PublishTrimmed>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>szp</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\model\Library.csproj" />
@@ -14,8 +17,8 @@
   <PropertyGroup>
     <RootNamespace>SchemaZen.console</RootNamespace>
     <ApplicationIcon />
-    <OutputType>Exe</OutputType>
     <StartupObject />
-    <AssemblyName>SchemaZen</AssemblyName>
+    <AssemblyName>SchemaZenPlus.Console</AssemblyName>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

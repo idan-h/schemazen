@@ -21,7 +21,7 @@ namespace SchemaZen.Library.Models {
 
 		public string ScriptCreate() {
 			var login = PasswordHash == null ? string.Empty : $@"IF SUSER_ID('{Name}') IS NULL
-				BEGIN CREATE LOGIN {Name} WITH PASSWORD = {"0x" + Convert.ToHexString(PasswordHash)} HASHED END
+				BEGIN CREATE LOGIN {Name} WITH PASSWORD = {"0x" + StringUtil.ByteArrayToHexString(PasswordHash)} HASHED END
 ";
 
 			return login +

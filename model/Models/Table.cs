@@ -196,7 +196,7 @@ end
 								if (dr[c.Name] is DBNull)
 									data.Write(_nullValue);
 								else if (dr[c.Name] is byte[])
-									data.Write(Convert.ToHexString((byte[])dr[c.Name]));
+									data.Write(StringUtil.ByteArrayToHexString((byte[])dr[c.Name]));
 								else if (dr[c.Name] is DateTime) {
 									data.Write(
 										((DateTime)dr[c.Name])
@@ -334,7 +334,7 @@ end
 				case "binary":
 				case "varbinary":
 				case "image":
-					return Convert.FromHexString(val);
+					return StringUtil.StringToByteArray(val);
 				default:
 					return val;
 			}
