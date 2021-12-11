@@ -5,6 +5,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>szp</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
+    <Version>1.0.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\model\Library.csproj" />
@@ -20,5 +21,10 @@
     <StartupObject />
     <AssemblyName>SchemaZenPlus</AssemblyName>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/idan-h/schemazenPlus</PackageProjectUrl>
+    <Description>A cli tool for scripting and comparing sql server object</Description>
+    <Authors>idan-h</Authors>
+    <Company />
+    <Product />
   </PropertyGroup>
 </Project>
