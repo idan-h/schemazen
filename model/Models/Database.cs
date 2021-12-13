@@ -1611,6 +1611,9 @@ where name = @dbname
 				if (!routine.Dependencies.Any() || !routine.Dependencies.Except(done).Any())
 				{
 					text.AppendLine(routine.ScriptCreate());
+					text.AppendLine();
+					text.AppendLine("GO");
+					text.AppendLine();
 					done.Add(routine);
 				}
 				else

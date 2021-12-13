@@ -766,7 +766,7 @@ select * from Table1
 			db.FindProp("TRUSTWORTHY").Value = "ON";
 			db.FindProp("DB_CHAINING").Value = "ON";
 			db.FindProp("PARAMETERIZATION").Value = "FORCED";
-			db.FindProp("DATE_CORRELATION_OPTIMIZATION").Value = "ON";
+			//db.FindProp("DATE_CORRELATION_OPTIMIZATION").Value = "ON";
 
 			db.Connection = ConfigHelper.TestDB.Replace("database=TESTDB", "database=" + db.Name);
 			db.ExecCreate(true);
