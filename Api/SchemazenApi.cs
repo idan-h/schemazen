@@ -6,8 +6,13 @@ namespace Api
 {
     public class SchemazenApi
     {
-		public static void Import(string connectionString, string importDir, ILogger logger, bool overwrite = false)
+		public static void Import(string connectionString,
+								  string importDir,
+								  ILogger logger = null,
+								  bool overwrite = false)
 		{
+			logger ??= new Logger(true);
+
 			var importCommand = new ImportCommand
 			{
 				ConnectionString = connectionString,
@@ -17,6 +22,25 @@ namespace Api
 			};
 
 			importCommand.Execute();
+		}
+
+		public static void Create(string connectionString,
+								  string scriptPath,
+								  ILogger logger = null,
+								  bool overwrite = false,
+								  string databaseFilesPath = null)
+		{
+			logger ??= new Logger(true);
+
+			var createCommand = new CreateCommand
+			{
+				ConnectionString = connectionString,
+				ScriptPath = scriptPath,
+				Logger = logger,
+				Overwrite = overwrite
+			};
+
+			createCommand.Execute(databaseFilesPath);
 		}
 	}
 }
