@@ -223,9 +223,30 @@ end
 			}
 		}
 
-		public void ImportData(string conn, string filename) {
+		public void TruncateData(string conn) {
+			using (var cn = new SqlConnection(conn)) {
+				cn.Open();
+				using (var cm = cn.CreateCommand()) {
+					try {
+						cm.CommandText = $@"
+						ALTER TABLE [{Owner}].[{Name}] NOCHECK CONSTRAINT ALL
+						TRUNCATE TABLE [{Owner}].[{Name}]
+						ALTER TABLE [{Owner}].[{Name}] CHECK CONSTRAINT ALL";
+						cm.ExecuteNonQuery();
+					}
+					catch (SqlException) {
+
+					}
+				}
+			}
+		}
+
+		public void ImportData(string conn, string filename, bool overwrite = false) {
 			if (IsType)
 				throw new InvalidOperationException();
+
+			if (overwrite)
+				TruncateData(conn);
 
 			var dt = new DataTable();
 			var cols = Columns.Items.Where(c => string.IsNullOrEmpty(c.ComputedDefinition))

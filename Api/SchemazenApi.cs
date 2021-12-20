@@ -8,7 +8,8 @@ namespace Api
     {
 		public static void Import(string connectionString,
 								  string importDir,
-								  ILogger logger = null)
+								  ILogger logger = null,
+								  bool overwrite = false)
 		{
 			logger ??= new Logger(true);
 
@@ -17,6 +18,7 @@ namespace Api
 				ConnectionString = connectionString,
 				DataDir = importDir,
 				Logger = logger,
+				Overwrite = overwrite,
 			};
 
 			importCommand.Execute();

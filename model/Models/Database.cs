@@ -1725,7 +1725,7 @@ where name = @dbname
 
 		#region Create
 
-		public void ImportData(Action<TraceLevel, string> log = null) {
+		public void ImportData(Action<TraceLevel, string> log = null, bool overwrite = false) {
 			if (log == null) log = (tl, s) => { };
 
 			var dataDir = DataDir + "\\data";
@@ -1757,7 +1757,7 @@ where name = @dbname
 
 				try {
 					log(TraceLevel.Verbose, $"Importing data for table {schema}.{table}...");
-					t.ImportData(Connection, fi.FullName);
+					t.ImportData(Connection, fi.FullName, overwrite);
 				} catch (SqlBatchException ex) {
 					throw new DataFileException(ex.Message, fi.FullName, ex.LineNumber);
 				} catch (Exception ex) {

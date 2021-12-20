@@ -12,7 +12,7 @@ namespace SchemaZen.Library.Command {
 				throw new FileNotFoundException($"Directory {db.DataDir} does not exist.");
 			}
 
-			db.ImportData(Logger.Log);
+			db.ImportData(Logger.Log, Overwrite);
 			Logger.Log(TraceLevel.Info, $"{Environment.NewLine}Data imported successfully.");
 		}
 	}
