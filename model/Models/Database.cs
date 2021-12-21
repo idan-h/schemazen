@@ -1579,7 +1579,7 @@ where name = @dbname
 			text.AppendLine($"-- permissions.sql");
 			WriteScriptDir(text, "permissions", Permissions.ToArray(), log);
 
-			File.WriteAllText(ScriptPath, text.ToString());
+			File.WriteAllText(ScriptPath, text.ToString(), Encoding.UTF8);
 		}
 
 		private void WritePropsScript(StringBuilder text, Action<TraceLevel, string> log) {
@@ -1782,7 +1782,7 @@ where name = @dbname
 			//create database
 			DBHelper.CreateDb(Connection, databaseFilesPath);
 
-			var createScript = File.ReadAllText(ScriptPath);
+			var createScript = File.ReadAllText(ScriptPath, Encoding.UTF8);
 
 			// props
 			var propsPart = createScript[createScript.IndexOf("-- props.sql")..createScript.IndexOf("-- users.sql")];
