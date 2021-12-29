@@ -490,6 +490,7 @@ from #ScriptedRoles
 						left join sys.schemas s2 on s2.schema_id = t.schema_id
 						left join sys.schemas s3 on s3.schema_id = v.schema_id
 					where objectproperty(o.object_id, 'IsMSShipped') = 0
+					order by o.name
 					";
 			using (var dr = cm.ExecuteReader()) {
 				while (dr.Read()) {
