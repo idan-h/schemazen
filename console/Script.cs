@@ -23,10 +23,15 @@ namespace SchemaZen.console {
 				"A comma separated list of the types that will only be scripted. Valid types: " +
 				Database.ValidTypes,
 				o => OnlyTypes = o);
+			HasOption(
+				"no-comments",
+				"If true, produces a file with no section comments",
+				o => NoComments = o != null);
 		}
 
 		protected string FilterTypes { get; set; }
 		protected string OnlyTypes { get; set; }
+		protected bool NoComments { get; set; }
 
 		public override int Run(string[] args) {
 			var logger = new Logger(Verbose);
@@ -43,6 +48,7 @@ namespace SchemaZen.console {
 				ScriptPath = ScriptPath,
 				NoDependencies = NoDependencies,
 				Logger = logger,
+				Comments = !NoComments,
 				Overwrite = Overwrite
 			};
 

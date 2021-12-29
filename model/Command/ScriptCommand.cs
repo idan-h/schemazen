@@ -6,6 +6,8 @@ using System.Linq;
 
 namespace SchemaZen.Library.Command {
 	public class ScriptCommand : BaseCommand {
+		public bool Comments { get; set; } = true;
+
 		public void Execute(List<string> filteredTypes) {
 			if (!Overwrite && File.Exists(ScriptPath)) {
 				var message = $"{ScriptPath} already exists - you must set overwrite to true";
@@ -19,7 +21,7 @@ namespace SchemaZen.Library.Command {
 			db.Load();
 			Logger.Log(TraceLevel.Info, "Database schema loaded.");
 
-			db.ScriptToDir(Logger.Log);
+			db.ScriptToDir(Logger.Log, Comments);
 
 			Logger.Log(TraceLevel.Info,
 				$"{Environment.NewLine}Snapshot successfully created at {db.ScriptPath}");

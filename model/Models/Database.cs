@@ -1457,7 +1457,7 @@ where name = @dbname
 			return text.ToString();
 		}
 
-		public void ScriptToDir(Action<TraceLevel, string> log = null) {
+		public void ScriptToDir(Action<TraceLevel, string> log = null, bool commentSections = true) {
 			if (log == null) log = (tl, s) => { };
 
 			if (File.Exists(ScriptPath)) {
@@ -1470,26 +1470,26 @@ where name = @dbname
 			}
 
 			var text = new StringBuilder();
-			text.AppendLine($"-- Always check the migration script before you apply it");
+			if (commentSections) text.AppendLine($"-- Always check the migration script before you apply it");
 
 
-			WritePropsScript(text, log);
+			WritePropsScript(text, log, commentSections);
 
-			text.AppendLine($"-- users.sql");
+			if (commentSections) text.AppendLine($"-- users.sql");
 			WriteScriptDir(text, "users", Users.ToArray(), log);
 
-			text.AppendLine($"-- roles.sql");
+			if (commentSections) text.AppendLine($"-- roles.sql");
 			WriteScriptDir(text, "roles", Roles.ToArray(), log);
 
-			WriteSchemaScript(text, log);
+			WriteSchemaScript(text, log, commentSections);
 
-			text.AppendLine($"-- tables.sql");
+			if (commentSections) text.AppendLine($"-- tables.sql");
 			text.AppendLine("GO");
 			text.AppendLine("SET ANSI_NULLS ON");
 			text.AppendLine("GO");
 			WriteScriptDir(text, "tables", Tables.ToArray(), log);
 
-			text.AppendLine($"-- constraints_and_defaults.sql");
+			if (commentSections) text.AppendLine($"-- constraints_and_defaults.sql");
 			foreach (var table in Tables)
 			{
 				WriteScriptDir(text, "check_constraints", table.Constraints.Where(c => c.Type == "CHECK").ToArray(), log);
@@ -1504,96 +1504,60 @@ where name = @dbname
 				}
 			}
 
-			text.AppendLine($"-- table_types.sql");
+			if (commentSections) text.AppendLine($"-- table_types.sql");
 			WriteScriptDir(text, "table_types", TableTypes.ToArray(), log);
-			text.AppendLine($"-- user_defined_types.sql");
+			if (commentSections) text.AppendLine($"-- user_defined_types.sql");
 			WriteScriptDir(text, "user_defined_types", UserDefinedTypes.ToArray(), log);
 
-			text.AppendLine($"-- assemblies.sql");
+			if (commentSections) text.AppendLine($"-- assemblies.sql");
 			WriteScriptDir(text, "assemblies", Assemblies.ToArray(), log);
 
-			text.AppendLine($"-- synonyms.sql");
+			if (commentSections) text.AppendLine($"-- synonyms.sql");
 			WriteScriptDir(text, "synonyms", Synonyms.ToArray(), log);
 
 
 			var doneRoutines = new List<Routine>();
-			text.AppendLine($"-- functions and views.sql");
+			if (commentSections) text.AppendLine($"-- functions and views.sql");
 			var functionsAndViews = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Function || x.RoutineType == Routine.RoutineKind.View).ToList();
 			WriteRoutinesScript(text, functionsAndViews,
 				routine => !Dirs.Contains("views") && routine.RoutineType == Routine.RoutineKind.View || !Dirs.Contains("functions") && routine.RoutineType == Routine.RoutineKind.Function, doneRoutines);
 
-			//for (var i = 0; i < functionsAndViews.Count; i++)
-			//{
-			//	var routine = functionsAndViews[i];
-			//	if (!Dirs.Contains("views") && routine.RoutineType == Routine.RoutineKind.View ||
-			//		!Dirs.Contains("functions") && routine.RoutineType == Routine.RoutineKind.Function)
-			//		continue;
-
-			//	if (!routine.Dependencies.Any() || !routine.Dependencies.Except(doneRoutines).Any())
-			//	{
-			//		text.AppendLine(routine.ScriptCreate());
-			//		doneRoutines.Add(routine);
-			//	}
-			//	else
-			//	{
-			//		functionsAndViews.RemoveAt(i);
-			//		functionsAndViews.Add(routine);
-			//		i--;
-			//	}
-			//}
-
 			if (Dirs.Contains("procedures"))
 			{
-				text.AppendLine($"-- procedures.sql");
+				if (commentSections) text.AppendLine($"-- procedures.sql");
 				var procedures = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Procedure).ToList();
 				WriteRoutinesScript(text, procedures, null, doneRoutines);
-
-				//for (var i = 0; i < procedures.Count; i++)
-				//{
-				//	var routine = procedures[i];
-				//	if (!routine.Dependencies.Any() || !routine.Dependencies.Except(doneRoutines).Any())
-				//	{
-				//		text.AppendLine(routine.ScriptCreate());
-				//		doneRoutines.Add(routine);
-				//	}
-				//	else
-				//	{
-				//		procedures.RemoveAt(i);
-				//		procedures.Add(routine);
-				//		i--;
-				//	}
-				//}
 			}
 
-			text.AppendLine($"-- view indexes.sql");
+			if (commentSections) text.AppendLine($"-- view indexes.sql");
 			WriteScriptDir(text, "view indexes", ViewIndexes.ToArray(), log);
 
-			text.AppendLine($"-- triggers.sql");
+			if (commentSections) text.AppendLine($"-- triggers.sql");
 			var triggers = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Trigger);
 			WriteScriptDir(text, "triggers", triggers.ToArray(), log);
 
-			text.AppendLine($"-- foreign_keys.sql");
+			if (commentSections) text.AppendLine($"-- foreign_keys.sql");
 			WriteScriptDir(text, "foreign_keys",
 				ForeignKeys.OrderBy(x => x, ForeignKeyComparer.Instance).ToArray(), log);
-			
-			text.AppendLine($"-- permissions.sql");
+
+			if (commentSections) text.AppendLine($"-- permissions.sql");
 			WriteScriptDir(text, "permissions", Permissions.ToArray(), log);
 
 			File.WriteAllText(ScriptPath, text.ToString(), Encoding.UTF8);
 		}
 
-		private void WritePropsScript(StringBuilder text, Action<TraceLevel, string> log) {
+		private void WritePropsScript(StringBuilder text, Action<TraceLevel, string> log, bool commentSections) {
 			if (!Dirs.Contains("props")) return;
 			log(TraceLevel.Verbose, "Scripting database properties...");
-			text.AppendLine("-- props.sql");
+			if (commentSections) text.AppendLine("-- props.sql");
 			text.Append(ScriptPropList(Props));
 			text.AppendLine();
 		}
 
-		private void WriteSchemaScript(StringBuilder text, Action<TraceLevel, string> log) {
+		private void WriteSchemaScript(StringBuilder text, Action<TraceLevel, string> log, bool commentSections) {
 			if (!Dirs.Contains("schemas")) return;
 			log(TraceLevel.Verbose, "Scripting database schemas...");
-			text.AppendLine("-- schemas.sql");
+			if (commentSections) text.AppendLine("-- schemas.sql");
 			foreach (var schema in Schemas) {
 				text.Append(schema.ScriptCreate());
 			}
