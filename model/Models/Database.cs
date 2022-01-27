@@ -1600,6 +1600,7 @@ where name = @dbname
 					$"Scripting {name} {++index} of {objects.Count}...{(index < objects.Count ? "\r" : string.Empty)}");
 				var script = o.ScriptCreate();
 				text.AppendLine(script);
+				text.AppendLine("GO");
 			}
 		}
 
