@@ -88,10 +88,23 @@ namespace SchemaZen.Library.Models {
 		}
 
 		private static string RemoveExtraNewLines(string definition) {
-			return definition.Trim('\r', '\n');
+			return definition.Trim();
 		}
 
 		public string ScriptCreate() {
+			if (RoutineType != RoutineKind.XmlSchemaCollection)
+			{
+				var regex = new Regex(_sqlCreateRegex, RegexOptions.IgnoreCase);
+				var match = regex.Match(Text);
+				var group = match.Groups[1];
+				if (group.Success)
+				{
+					return ScriptBase(Db,
+						Text[..group.Index] + "CREATE" +
+						Text[(group.Index + group.Length)..]);
+				}
+			}
+
 			return ScriptBase(Db, Text);
 		}
 
