@@ -1574,7 +1574,11 @@ where name = @dbname
 				var routine = routines[i];
 				if (check?.Invoke(routine) ?? false) continue;
 
-				if (!routine.Dependencies.Any() || !routine.Dependencies.Except(done).Any())
+				var routineDependencies = routine.Dependencies
+					.Where(x => routines.Contains(x))
+					.ToList();
+
+				if (!routineDependencies.Any() || !routineDependencies.Except(done).Any())
 				{
 					text.AppendLine(routine.ScriptCreate());
 					text.AppendLine();
