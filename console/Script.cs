@@ -19,7 +19,7 @@ namespace SchemaZen.console {
 				Database.ValidTypes,
 				o => FilterTypes = o);
 			HasOption(
-				"excludedRoutines",
+				"excludedRoutines=",
 				"A comma seperated list of routine names to exclude.",
 				o => ExcludedRoutines = o);
 			HasOption(
