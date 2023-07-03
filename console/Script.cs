@@ -19,6 +19,10 @@ namespace SchemaZen.console {
 				Database.ValidTypes,
 				o => FilterTypes = o);
 			HasOption(
+				"excludedRoutines",
+				"A comma seperated list of routine names to exclude.",
+				o => ExcludedRoutines = o);
+			HasOption(
 				"onlyTypes=",
 				"A comma separated list of the types that will only be scripted. Valid types: " +
 				Database.ValidTypes,
@@ -31,6 +35,7 @@ namespace SchemaZen.console {
 
 		protected string FilterTypes { get; set; }
 		protected string OnlyTypes { get; set; }
+		protected string ExcludedRoutines { get; set; }
 		protected bool NoComments { get; set; }
 
 		public override int Run(string[] args) {
@@ -52,10 +57,11 @@ namespace SchemaZen.console {
 				Overwrite = Overwrite
 			};
 
+			var excludedRoutines = ExcludedRoutines?.Split(',').Select(x => x.ToLower()).ToList() ?? new List<string>();
 			var filteredTypes = TypesHelper.HandleFilteredTypes(FilterTypes, OnlyTypes, logger);
 
 			try {
-				scriptCommand.Execute(filteredTypes);
+				scriptCommand.Execute(filteredTypes, excludedRoutines);
 			} catch (Exception ex) {
 				throw new ConsoleHelpAsException(ex.Message);
 			}

@@ -1458,7 +1458,7 @@ where name = @dbname
 			return text.ToString();
 		}
 
-		public void ScriptToDir(Action<TraceLevel, string> log = null, bool commentSections = true) {
+		public void ScriptToDir(Action<TraceLevel, string> log = null, bool commentSections = true, List<string> excludedRoutines = null) {
 			if (log == null) log = (tl, s) => { };
 
 			if (File.Exists(ScriptPath)) {
@@ -1517,16 +1517,17 @@ where name = @dbname
 			WriteScriptDir(text, "synonyms", Synonyms.ToArray(), log);
 
 
+			var nonExcludedRoutines = Routines.Where(x => !excludedRoutines.Contains(x.Name.ToLower())).ToList();
 			var doneRoutines = new List<Routine>();
 			if (commentSections) text.AppendLine($"-- functions and views.sql");
-			var functionsAndViews = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Function || x.RoutineType == Routine.RoutineKind.View).ToList();
+			var functionsAndViews = nonExcludedRoutines.Where(x => x.RoutineType == Routine.RoutineKind.Function || x.RoutineType == Routine.RoutineKind.View).ToList();
 			WriteRoutinesScript(text, functionsAndViews,
 				routine => !Dirs.Contains("views") && routine.RoutineType == Routine.RoutineKind.View || !Dirs.Contains("functions") && routine.RoutineType == Routine.RoutineKind.Function, doneRoutines);
 
 			if (Dirs.Contains("procedures"))
 			{
 				if (commentSections) text.AppendLine($"-- procedures.sql");
-				var procedures = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Procedure).ToList();
+				var procedures = nonExcludedRoutines.Where(x => x.RoutineType == Routine.RoutineKind.Procedure).ToList();
 				WriteRoutinesScript(text, procedures, null, doneRoutines);
 			}
 
@@ -1534,7 +1535,7 @@ where name = @dbname
 			WriteScriptDir(text, "view indexes", ViewIndexes.ToArray(), log);
 
 			if (commentSections) text.AppendLine($"-- triggers.sql");
-			var triggers = Routines.Where(x => x.RoutineType == Routine.RoutineKind.Trigger);
+			var triggers = nonExcludedRoutines.Where(x => x.RoutineType == Routine.RoutineKind.Trigger);
 			WriteScriptDir(text, "triggers", triggers.ToArray(), log);
 
 			if (commentSections) text.AppendLine($"-- foreign_keys.sql");

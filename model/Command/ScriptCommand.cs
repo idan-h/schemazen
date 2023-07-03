@@ -8,7 +8,7 @@ namespace SchemaZen.Library.Command {
 	public class ScriptCommand : BaseCommand {
 		public bool Comments { get; set; } = true;
 
-		public void Execute(List<string> filteredTypes) {
+		public void Execute(List<string> filteredTypes, List<string> excludedRoutines) {
 			if (!Overwrite && File.Exists(ScriptPath)) {
 				var message = $"{ScriptPath} already exists - you must set overwrite to true";
 				throw new InvalidOperationException(message);
@@ -21,7 +21,7 @@ namespace SchemaZen.Library.Command {
 			db.Load();
 			Logger.Log(TraceLevel.Info, "Database schema loaded.");
 
-			db.ScriptToDir(Logger.Log, Comments);
+			db.ScriptToDir(Logger.Log, Comments, excludedRoutines);
 
 			Logger.Log(TraceLevel.Info,
 				$"{Environment.NewLine}Snapshot successfully created at {db.ScriptPath}");
