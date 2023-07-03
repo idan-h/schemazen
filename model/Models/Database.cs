@@ -1517,7 +1517,7 @@ where name = @dbname
 			WriteScriptDir(text, "synonyms", Synonyms.ToArray(), log);
 
 
-			var nonExcludedRoutines = Routines.Where(x => !excludedRoutines.Contains(x.Name.ToLower())).ToList();
+			var nonExcludedRoutines = Routines.Where(x => excludedRoutines == null || !excludedRoutines.Contains(x.Name.ToLower())).ToList();
 			var doneRoutines = new List<Routine>();
 			if (commentSections) text.AppendLine($"-- functions and views.sql");
 			var functionsAndViews = nonExcludedRoutines.Where(x => x.RoutineType == Routine.RoutineKind.Function || x.RoutineType == Routine.RoutineKind.View).ToList();

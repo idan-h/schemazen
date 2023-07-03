@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -630,6 +631,31 @@ AS INSERT INTO [dbo].[t2](a) SELECT a FROM INSERTED";
 			var script = File.ReadAllText(db.ScriptPath);
 
 			StringAssert.DoesNotContain("INSERTEDENABLE", script);
+		}
+
+		[Test]
+		public void TestScriptWithExcludeRoutines()
+		{
+			var testRoutine = new Routine("dbo", "test", null)
+			{
+				Text = "test",
+			};
+
+			var db1 = new Database();
+			db1.Routines.Add(testRoutine);
+			db1.ScriptPath = "excludedRoutinesTest.sql";
+			db1.ScriptToDir(excludedRoutines: new List<string>() { "test" });
+
+			var db2 = new Database();
+			db2.Routines.Add(testRoutine);
+			db2.ScriptPath = "nonExcludedRoutinesTest.sql";
+			db2.ScriptToDir();
+
+			var script1 = File.ReadAllText(db1.ScriptPath);
+			var script2 = File.ReadAllText(db2.ScriptPath);
+
+			StringAssert.DoesNotContain("test", script1);
+			StringAssert.Contains("test", script2);
 		}
 
 		[Test]
