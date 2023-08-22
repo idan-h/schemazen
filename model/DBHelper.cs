@@ -83,7 +83,7 @@ LOG ON
 			using (var cn = new SqlConnection(cnBuilder.ToString())) {
 				cn.Open();
 				using (var cm = cn.CreateCommand()) {
-					cm.CommandText = "select db_id('" + dbName + "')";
+					cm.CommandText = "SELECT 1 FROM sys.databases WHERE name = '" + dbName + "'";
 					exists = !ReferenceEquals(cm.ExecuteScalar(), DBNull.Value);
 				}
 			}

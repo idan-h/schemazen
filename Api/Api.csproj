@@ -5,7 +5,7 @@
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AssemblyName>SchemaZenPlus.Api</AssemblyName>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <PackageProjectUrl>https://github.com/idan-h/schemazenPlus</PackageProjectUrl>
     <Description>Api library for SchemaZenPlus in case you need to use the tool from C#</Description>
     <Authors>idan-h</Authors>
