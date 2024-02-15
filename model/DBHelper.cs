@@ -75,20 +75,24 @@ LOG ON
 		}
 
 		public static bool DbExists(string conn) {
-			var exists = false;
 			var cnBuilder = new SqlConnectionStringBuilder(conn);
 			var dbName = cnBuilder.InitialCatalog;
 			cnBuilder.InitialCatalog = "master";
 
-			using (var cn = new SqlConnection(cnBuilder.ToString())) {
-				cn.Open();
-				using (var cm = cn.CreateCommand()) {
-					cm.CommandText = "SELECT 1 FROM sys.databases WHERE name = '" + dbName + "'";
-					exists = !ReferenceEquals(cm.ExecuteScalar(), DBNull.Value);
-				}
+			using var cn = new SqlConnection(cnBuilder.ToString());
+			using var cm = cn.CreateCommand();
+
+			cm.CommandText = "SELECT database_id FROM sys.databases WHERE name = '" + dbName + "'";
+
+			cn.Open();
+			var result = cm.ExecuteScalar();
+
+			if (result == null)
+			{
+				return false;
 			}
 
-			return exists;
+			return !ReferenceEquals(result, DBNull.Value);
 		}
 
 		public static void ClearPool(string conn) {
