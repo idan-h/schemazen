@@ -7,12 +7,16 @@ namespace SchemaZen.Library {
 	public class DBHelper {
 		public static bool EchoSql { get; set; } = false;
 
-		public static void ExecSql(string conn, string sql) {
+		public static void ExecSql(string conn, string sql , int? timeout = null) {
 			if (EchoSql) Console.WriteLine(sql);
 			using (var cn = new SqlConnection(conn)) {
 				cn.Open();
 				using (var cm = cn.CreateCommand()) {
 					cm.CommandText = sql;
+					if (timeout != null)
+					{
+						cm.CommandTimeout = timeout.Value;
+					}
 					cm.ExecuteNonQuery();
 				}
 			}
@@ -72,7 +76,7 @@ LOG ON
     FILENAME =  '{databaseFilesPath}\{dbName + Guid.NewGuid()}.ldf')";
 			}
 
-			ExecSql(cnBuilder.ToString(), $"CREATE DATABASE [{dbName}] {files} {extraQuery}");
+			ExecSql(cnBuilder.ToString(), $"CREATE DATABASE [{dbName}] {files} {extraQuery}", 900);
 		}
 
 		public static bool DbExists(string conn) {
