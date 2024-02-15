@@ -1761,7 +1761,7 @@ where name = @dbname
 				log(TraceLevel.Verbose, "Setting database properties...");
 				try
 				{
-					DBHelper.ExecBatchSql(Connection, propsPart);
+					DBHelper.ExecBatchSql(Connection, propsPart, 300);
 				}
 				catch (SqlBatchException ex)
 				{
@@ -1778,7 +1778,7 @@ where name = @dbname
 			if (!string.IsNullOrWhiteSpace(usersPart)) {
 				log(TraceLevel.Info, "Adding users...");
 				try {
-					DBHelper.ExecBatchSql(Connection, usersPart);
+					DBHelper.ExecBatchSql(Connection, usersPart, 300);
 				} catch (SqlBatchException ex) {
 					throw new SqlFileException("users", ex);
 				}
@@ -1789,7 +1789,7 @@ where name = @dbname
 			if (!string.IsNullOrWhiteSpace(schemasPart)) {
 				log(TraceLevel.Verbose, "Creating database schemas...");
 				try {
-					DBHelper.ExecBatchSql(Connection, schemasPart);
+					DBHelper.ExecBatchSql(Connection, schemasPart, 300);
 				} catch (SqlBatchException ex) {
 					throw new SqlFileException("schemas", ex);
 				}
@@ -1801,7 +1801,7 @@ where name = @dbname
 			var errors = new List<SqlFileException>();
 			try
 			{
-				DBHelper.ExecBatchSql(Connection, allObjectsPart);
+				DBHelper.ExecBatchSql(Connection, allObjectsPart, 300);
 			}
 			catch (SqlBatchException ex)
 			{

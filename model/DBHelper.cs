@@ -22,7 +22,7 @@ namespace SchemaZen.Library {
 			}
 		}
 
-		public static void ExecBatchSql(string conn, string sql) {
+		public static void ExecBatchSql(string conn, string sql, int? timeout = null) {
 			var prevLines = 0;
 			using (var cn = new SqlConnection(conn)) {
 				cn.Open();
@@ -30,6 +30,10 @@ namespace SchemaZen.Library {
 					foreach (var script in BatchSqlParser.SplitBatch(sql)) {
 						if (EchoSql) Console.WriteLine(script);
 						cm.CommandText = script;
+						if (timeout != null)
+						{
+							cm.CommandTimeout = timeout.Value;
+						}
 						try {
 							cm.ExecuteNonQuery();
 						} catch (SqlException ex) {
