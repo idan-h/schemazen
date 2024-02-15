@@ -1739,11 +1739,11 @@ where name = @dbname
 			log(TraceLevel.Info, "Data imported successfully.");
 		}
 
-		public void CreateFromDir(bool overwrite, string databaseFilesPath = null,
+		public void CreateFromDir(bool overwrite, string databaseFilesPath = null, string extraDbCreateQuery = null,
 			Action<TraceLevel, string> log = null) {
 			if (log == null) log = (tl, s) => { };
 
-			if (DBHelper.DbExists(Connection)) {
+			if (overwrite && DBHelper.DbExists(Connection)) {
 				log(TraceLevel.Verbose, "Dropping existing database...");
 				DBHelper.DropDb(Connection);
 				log(TraceLevel.Verbose, "Existing database dropped.");
@@ -1751,7 +1751,7 @@ where name = @dbname
 
 			log(TraceLevel.Info, "Creating database...");
 			//create database
-			DBHelper.CreateDb(Connection, databaseFilesPath);
+			DBHelper.CreateDb(Connection, databaseFilesPath, extraDbCreateQuery);
 
 			var createScript = File.ReadAllText(ScriptPath, Encoding.UTF8);
 

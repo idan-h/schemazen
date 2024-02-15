@@ -28,7 +28,8 @@ namespace Api
 								  string scriptPath,
 								  ILogger logger = null,
 								  bool overwrite = false,
-								  string databaseFilesPath = null)
+								  string databaseFilesPath = null,
+								  string extraDbCreateQuery = null)
 		{
 			logger ??= new Logger(true);
 
@@ -40,7 +41,7 @@ namespace Api
 				Overwrite = overwrite
 			};
 
-			createCommand.Execute(databaseFilesPath);
+			createCommand.Execute(databaseFilesPath, extraDbCreateQuery);
 		}
 	}
 }

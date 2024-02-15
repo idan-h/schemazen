@@ -56,10 +56,11 @@ namespace SchemaZen.Library {
 			}
 		}
 
-		public static void CreateDb(string connection, string databaseFilesPath = null) {
+		public static void CreateDb(string connection, string databaseFilesPath = null, string extraQuery = null) {
 			var cnBuilder = new SqlConnectionStringBuilder(connection);
 			var dbName = cnBuilder.InitialCatalog;
 			cnBuilder.InitialCatalog = "master";
+
 			var files = string.Empty;
 			if (databaseFilesPath != null) {
 				Directory.CreateDirectory(databaseFilesPath);
@@ -71,7 +72,7 @@ LOG ON
     FILENAME =  '{databaseFilesPath}\{dbName + Guid.NewGuid()}.ldf')";
 			}
 
-			ExecSql(cnBuilder.ToString(), "CREATE DATABASE [" + dbName + "] " + files);
+			ExecSql(cnBuilder.ToString(), $"CREATE DATABASE [{dbName}] {files} {extraQuery}");
 		}
 
 		public static bool DbExists(string conn) {

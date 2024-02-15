@@ -4,7 +4,7 @@ using System.IO;
 
 namespace SchemaZen.Library.Command {
 	public class CreateCommand : BaseCommand {
-		public void Execute(string databaseFilesPath) {
+		public void Execute(string databaseFilesPath, string extraDbCreateQuery) {
 			var db = CreateDatabase();
 			if (!File.Exists(db.ScriptPath)) {
 				throw new FileNotFoundException($"Create script {db.ScriptPath} does not exist.");
@@ -16,7 +16,7 @@ namespace SchemaZen.Library.Command {
 				throw new InvalidOperationException(msg);
 			}
 
-			db.CreateFromDir(Overwrite, databaseFilesPath, Logger.Log);
+			db.CreateFromDir(Overwrite, databaseFilesPath, extraDbCreateQuery, Logger.Log);
 			Logger.Log(TraceLevel.Info, $"{Environment.NewLine}Database created successfully.");
 		}
 	}
