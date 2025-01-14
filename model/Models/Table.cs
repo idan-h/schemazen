@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Microsoft.Data.SqlClient;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace SchemaZen.Library.Models {
 	public class Schema : INameable, IHasOwner, IScriptable {
@@ -235,13 +236,12 @@ end
 						cm.ExecuteNonQuery();
 					}
 					catch (SqlException) {
-
 					}
 				}
 			}
 		}
 
-		public void ImportData(string conn, string filename, bool overwrite = false) {
+		public void ImportData(string conn, string filename, bool overwrite = false, int? timeoutSeconds = null) {
 			if (IsType)
 				throw new InvalidOperationException();
 
@@ -257,78 +257,90 @@ end
 
 			var linenumber = 0;
 			var batch_rows = 0;
-			using (var bulk = new SqlBulkCopy(conn,
+			using var bulk = new SqlBulkCopy(conn,
 				SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls |
-				SqlBulkCopyOptions.TableLock)) {
-				foreach (var colName in dt.Columns.OfType<DataColumn>().Select(c => c.ColumnName))
-					bulk.ColumnMappings.Add(colName, colName);
-				bulk.DestinationTableName = $"[{Owner}].[{Name}]";
+				SqlBulkCopyOptions.TableLock);
 
-				using (var file = new StreamReader(filename)) {
-					var line = new List<char>();
-					while (file.Peek() >= 0) {
-						var rowsep_cnt = 0;
-						line.Clear();
+			bulk.BulkCopyTimeout = timeoutSeconds ?? 300;
 
-						while (file.Peek() >= 0) {
-							var ch = (char)file.Read();
-							line.Add(ch);
+			foreach (var colName in dt.Columns.OfType<DataColumn>().Select(c => c.ColumnName))
+				bulk.ColumnMappings.Add(colName, colName);
+			bulk.DestinationTableName = $"[{Owner}].[{Name}]";
 
-							if (ch == _rowSeparator[rowsep_cnt])
-								rowsep_cnt++;
-							else
-								rowsep_cnt = 0;
+			using (var file = new StreamReader(filename))
+			{
+				var line = new List<char>();
+				while (file.Peek() >= 0)
+				{
+					var rowsep_cnt = 0;
+					line.Clear();
 
-							if (rowsep_cnt == _rowSeparator.Length) {
-								// Remove rowseparator from line
-								line.RemoveRange(line.Count - _rowSeparator.Length,
-									_rowSeparator.Length);
-								break;
-							}
-						}
+					while (file.Peek() >= 0)
+					{
+						var ch = (char)file.Read();
+						line.Add(ch);
 
-						linenumber++;
+						if (ch == _rowSeparator[rowsep_cnt])
+							rowsep_cnt++;
+						else
+							rowsep_cnt = 0;
 
-						// Skip empty lines
-						if (line.Count == 0)
-							continue;
-
-						batch_rows++;
-
-						var row = dt.NewRow();
-						var fields =
-							new String(line.ToArray()).Split(new[] { _tab },
-								StringSplitOptions.None);
-						if (fields.Length != dt.Columns.Count) {
-							throw new DataFileException("Incorrect number of columns", filename,
-								linenumber);
-						}
-
-						for (var j = 0; j < fields.Length; j++) {
-							try {
-								row[j] = ConvertType(cols[j].Type,
-									fields[j].Replace(_escapeLineFeed, _lineFeed)
-										.Replace(_escapeCarriageReturn, _carriageReturn)
-										.Replace(_escapeTab, _tab));
-							} catch (FormatException ex) {
-								throw new DataFileException($"{ex.Message} at column {j + 1}",
-									filename, linenumber);
-							}
-						}
-
-						dt.Rows.Add(row);
-
-						if (batch_rows == RowsInBatch) {
-							batch_rows = 0;
-							bulk.WriteToServer(dt);
-							dt.Clear();
+						if (rowsep_cnt == _rowSeparator.Length)
+						{
+							// Remove rowseparator from line
+							line.RemoveRange(line.Count - _rowSeparator.Length,
+								_rowSeparator.Length);
+							break;
 						}
 					}
-				}
 
-				bulk.WriteToServer(dt);
-				bulk.Close();
+					linenumber++;
+
+					// Skip empty lines
+					if (line.Count == 0)
+						continue;
+
+					batch_rows++;
+
+					var row = dt.NewRow();
+					var fields =
+						new String(line.ToArray()).Split(new[] { _tab },
+							StringSplitOptions.None);
+					if (fields.Length != dt.Columns.Count)
+					{
+						throw new DataFileException("Incorrect number of columns", filename,
+							linenumber);
+					}
+
+					for (var j = 0; j < fields.Length; j++)
+					{
+						try
+						{
+							row[j] = ConvertType(cols[j].Type,
+								fields[j].Replace(_escapeLineFeed, _lineFeed)
+									.Replace(_escapeCarriageReturn, _carriageReturn)
+									.Replace(_escapeTab, _tab));
+						}
+						catch (FormatException ex)
+						{
+							throw new DataFileException($"{ex.Message} at column {j + 1}",
+								filename, linenumber);
+						}
+					}
+
+					dt.Rows.Add(row);
+
+					if (batch_rows == RowsInBatch)
+					{
+						batch_rows = 0;
+						bulk.WriteToServer(dt);
+						dt.Clear();
+					}
+				}
 			}
+
+			bulk.WriteToServer(dt);
+			bulk.Close();
 		}
 
 		public static object ConvertType(string sqlType, string val) {

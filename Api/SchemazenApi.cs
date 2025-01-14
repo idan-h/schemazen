@@ -9,7 +9,8 @@ namespace Api
 		public static void Import(string connectionString,
 								  string importDir,
 								  ILogger logger = null,
-								  bool overwrite = false)
+								  bool overwrite = false,
+								  TimeSpan? timeout = null)
 		{
 			logger ??= new Logger(true);
 
@@ -21,7 +22,7 @@ namespace Api
 				Overwrite = overwrite,
 			};
 
-			importCommand.Execute();
+			importCommand.Execute(timeout);
 		}
 
 		public static void Create(string connectionString,

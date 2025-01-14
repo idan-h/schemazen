@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using SchemaZen.Library.Models;
 
 namespace SchemaZen.Library.Command {

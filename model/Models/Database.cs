@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -1696,7 +1696,7 @@ where name = @dbname
 
 		#region Create
 
-		public void ImportData(Action<TraceLevel, string> log = null, bool overwrite = false) {
+		public void ImportData(Action<TraceLevel, string> log = null, bool overwrite = false, TimeSpan? timeout = null) {
 			if (log == null) log = (tl, s) => { };
 
 			var dataDir = DataDir + "\\data";
@@ -1728,7 +1728,7 @@ where name = @dbname
 
 				try {
 					log(TraceLevel.Verbose, $"Importing data for table {schema}.{table}...");
-					t.ImportData(Connection, fi.FullName, overwrite);
+					t.ImportData(Connection, fi.FullName, overwrite, (int?)timeout?.TotalSeconds);
 				} catch (SqlBatchException ex) {
 					throw new DataFileException(ex.Message, fi.FullName, ex.LineNumber);
 				} catch (Exception ex) {
